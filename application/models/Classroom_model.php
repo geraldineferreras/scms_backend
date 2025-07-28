@@ -16,6 +16,14 @@ class Classroom_model extends CI_Model {
             ->get()->row_array();
     }
 
+    public function get_by_code($class_code) {
+        return $this->db->select('classrooms.*, users.full_name as teacher_name')
+            ->from('classrooms')
+            ->join('users', 'classrooms.teacher_id = users.user_id', 'left')
+            ->where('classrooms.class_code', $class_code)
+            ->get()->row_array();
+    }
+
     public function insert($data) {
         // Generate unique class code if not provided
         if (empty($data['class_code'])) {

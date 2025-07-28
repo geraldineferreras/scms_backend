@@ -1,4 +1,8 @@
 <?php
+// Set default timezone for the application
+if (function_exists('date_default_timezone_set')) {
+    date_default_timezone_set('Asia/Manila');
+}
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /*

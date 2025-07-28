@@ -145,5 +145,33 @@ $route['api/teacher/classrooms']['post'] = 'api/TeacherController/classrooms_pos
 $route['api/teacher/classrooms/(:num)']['get'] = 'api/TeacherController/classroom_get/$1';
 $route['api/teacher/classrooms/(:num)']['put'] = 'api/TeacherController/classrooms_put/$1';
 $route['api/teacher/classrooms/(:num)']['delete'] = 'api/TeacherController/classrooms_delete/$1';
+$route['api/teacher/classroom/(:any)']['get'] = 'api/TeacherController/classroom_by_code_get/$1';
+$route['api/teacher/classroom/(:any)']['put'] = 'api/TeacherController/classrooms_put_by_code/$1';
+$route['api/teacher/classroom/(:any)']['delete'] = 'api/TeacherController/classrooms_delete_by_code/$1';
+$route['api/teacher/classroom/(:any)/stream']['post'] = 'api/TeacherController/classroom_stream_post/$1';
+$route['api/teacher/classroom/(:any)/stream']['get'] = 'api/TeacherController/classroom_stream_get/$1';
+$route['api/teacher/classroom/(:any)/stream/(:num)/like']['post'] = 'api/TeacherController/classroom_stream_like_post/$1/$2';
+$route['api/teacher/classroom/(:any)/stream/(:num)/unlike']['post'] = 'api/TeacherController/classroom_stream_unlike_post/$1/$2';
+$route['api/teacher/classroom/(:any)/stream/(:num)/pin']['post'] = 'api/TeacherController/classroom_stream_pin_post/$1/$2';
+$route['api/teacher/classroom/(:any)/stream/(:num)/unpin']['post'] = 'api/TeacherController/classroom_stream_unpin_post/$1/$2';
+$route['api/teacher/classroom/(:any)/stream/scheduled']['get'] = 'api/TeacherController/classroom_stream_scheduled_get/$1';
+$route['api/teacher/classroom/(:any)/stream/drafts']['get'] = 'api/TeacherController/classroom_stream_drafts_get/$1';
+$route['api/teacher/classroom/(:any)/stream/draft/(:num)']['put'] = 'api/TeacherController/classroom_stream_draft_put/$1/$2';
+$route['api/teacher/classroom/(:any)/stream/(:num)/comment']['post'] = 'api/TeacherController/classroom_stream_comment_post/$1/$2';
+$route['api/teacher/classroom/(:any)/stream/(:num)/comments']['get'] = 'api/TeacherController/classroom_stream_comments_get/$1/$2';
+$route['api/teacher/classroom/(:any)/stream/(:num)/comment/(:num)']['put'] = 'api/TeacherController/classroom_stream_comment_put/$1/$2/$3';
+$route['api/teacher/classroom/(:any)/stream/(:num)/comment/(:num)']['delete'] = 'api/TeacherController/classroom_stream_comment_delete/$1/$2/$3';
+
+$route['pdf/(:any)'] = 'pdf/serve/$1';
+
+// Upload routes
+$route['api/upload/profile'] = 'api/Upload/profile';
+$route['api/upload/cover'] = 'api/Upload/cover';
+
+// Image serving routes
+$route['image/(:any)/(:any)'] = 'image/serve/$1/$2';
+
+// Test route
+$route['api/test/upload'] = 'api/Test/upload_test';
 
 

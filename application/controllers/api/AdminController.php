@@ -174,7 +174,16 @@ class AdminController extends BaseController {
         }
         
         $students = $this->Section_model->get_students($section_id);
-        return json_response(true, 'Students retrieved successfully', $students);
+        $adviser = [
+            'adviser_id' => $existing_section['adviser_id'],
+            'adviser_name' => $existing_section['adviser_name'],
+            'adviser_email' => $existing_section['adviser_email']
+        ];
+        $response = [
+            'adviser' => $adviser,
+            'students' => $students
+        ];
+        return json_response(true, 'Students and adviser retrieved successfully', $response);
     }
 
     // Get available advisers (teachers) for section assignment

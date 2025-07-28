@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>CORS Test for SCMS API</h1>
+    
+    <div class="test-section">
+        <h3>Test 1: Simple GET Request</h3>
+        <button onclick="testSimpleGet()">Test Simple GET</button>
+        <div id="result1"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Test 2: Subjects Endpoint (GET)</h3>
+        <button onclick="testSubjectsGet()">Test Subjects GET</button>
+        <div id="result2"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Test 3: OPTIONS Preflight Request</h3>
+        <button onclick="testOptionsRequest()">Test OPTIONS</button>
+        <div id="result3"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Test 4: POST Request with JSON</h3>
+        <button onclick="testPostRequest()">Test POST</button>
+        <div id="result4"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost/scms_new/index.php/api';
+        
+        function displayResult(elementId, success, message, data = null) {
+            const element = document.getElementById(elementId);
+            element.className = success ? 'test-section success' : 'test-section error';
+            
+            let content = `<strong>${success ? 'SUCCESS' : 'ERROR'}:</strong> ${message}`;
+            if (data) {
+                content += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            }
+            element.innerHTML = content;
+        }
+        
+        async function testSimpleGet() {
+            try {
+                const response = await fetch(`${API_BASE}/test`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                displayResult('result1', response.ok, `Status: ${response.status}`, data);
+            } catch (error) {
+                displayResult('result1', false, `Error: ${error.message}`);
+            }
+        }
+        
+        async function testSubjectsGet() {
+            try {
+                const response = await fetch(`${API_BASE}/admin/subjects`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer test-token'
+                    }
+                });
+                
+                const data = await response.json();
+                displayResult('result2', response.ok, `Status: ${response.status}`, data);
+            } catch (error) {
+                displayResult('result2', false, `Error: ${error.message}`);
+            }
+        }
+        
+        async function testOptionsRequest() {
+            try {
+                const response = await fetch(`${API_BASE}/admin/subjects`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer test-token'
+                    }
+                });
+                
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+                
+                displayResult('result3', response.ok, `Status: ${response.status}`, {
+                    headers: headers,
+                    corsHeaders: {
+                        'Access-Control-Allow-Origin': headers['access-control-allow-origin'],
+                        'Access-Control-Allow-Methods': headers['access-control-allow-methods'],
+                        'Access-Control-Allow-Headers': headers['access-control-allow-headers']
+                    }
+                });
+            } catch (error) {
+                displayResult('result3', false, `Error: ${error.message}`);
+            }
+        }
+        
+        async function testPostRequest() {
+            try {
+                const response = await fetch(`${API_BASE}/test`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        test: 'data',
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                const data = await response.json();
+                displayResult('result4', response.ok, `Status: ${response.status}`, data);
+            } catch (error) {
+                displayResult('result4', false, `Error: ${error.message}`);
+            }
+        }
+    </script>
+</body>
+</html> 

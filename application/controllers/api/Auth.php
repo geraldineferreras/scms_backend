@@ -11,18 +11,6 @@ class Auth extends BaseController {
         $this->load->model('User_model');
         $this->load->helper(['response', 'auth']);
         $this->load->library('Token_lib');
-        
-        // CORS headers
-        header('Access-Control-Allow-Origin: *');
-        header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-        header('Access-Control-Allow-Headers: Content-Type, Content-Length, Accept-Encoding, Authorization, X-Requested-With');
-        header('Content-Type: application/json');
-        
-        // Handle OPTIONS preflight
-        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-            http_response_code(200);
-            exit();
-        }
     }
 
     public function login() {
@@ -109,6 +97,185 @@ class Auth extends BaseController {
     }
 
     public function register() {
+        // Check if request is multipart/form-data or JSON
+        $content_type = $this->input->server('CONTENT_TYPE');
+        $is_multipart = strpos($content_type, 'multipart/form-data') !== false;
+        
+        if ($is_multipart) {
+            // Handle multipart/form-data (with images)
+            $this->register_with_images();
+        } else {
+            // Handle JSON request (existing code)
+            $this->register_json();
+        }
+    }
+
+    private function register_with_images() {
+        try {
+            // Get form data
+            $role = $this->input->post('role');
+            $full_name = $this->input->post('full_name');
+            $email = $this->input->post('email');
+            $password = $this->input->post('password');
+            $contact_num = $this->input->post('contact_num');
+            $address = $this->input->post('address');
+            $program = $this->input->post('program');
+            $student_num = $this->input->post('student_num');
+            $section_id = $this->input->post('section_id');
+            $qr_code = $this->input->post('qr_code');
+
+            // Debug logging
+            log_message('debug', '=== REGISTER WITH IMAGES DEBUG ===');
+            log_message('debug', 'Role: ' . $role);
+            log_message('debug', 'Full Name: ' . $full_name);
+            log_message('debug', 'Email: ' . $email);
+            log_message('debug', 'Contact: ' . $contact_num);
+            log_message('debug', 'Address: ' . $address);
+            log_message('debug', 'Program: ' . $program);
+            log_message('debug', 'Student Num: ' . $student_num);
+            log_message('debug', 'Section ID: ' . $section_id);
+            log_message('debug', 'QR Code: ' . $qr_code);
+            log_message('debug', '================================');
+
+            // Validate required fields
+            if (empty($role) || empty($full_name) || empty($email) || empty($password)) {
+                $this->output
+                    ->set_status_header(400)
+                    ->set_content_type('application/json')
+                    ->set_output(json_encode(['status' => false, 'message' => 'Required fields are missing']));
+                return;
+            }
+
+            // Check if email already exists
+            $existing_user = $this->User_model->get_by_email($email);
+            if ($existing_user) {
+                $this->output
+                    ->set_status_header(409)
+                    ->set_content_type('application/json')
+                    ->set_output(json_encode(['status' => false, 'message' => 'User with this email already exists!']));
+                return;
+            }
+
+            // Handle profile image upload
+            $profile_pic_path = '';
+            if (isset($_FILES['profile_pic']) && $_FILES['profile_pic']['error'] == 0) {
+                $profile_pic_path = $this->upload_image($_FILES['profile_pic'], 'profile');
+            }
+
+            // Handle cover image upload
+            $cover_pic_path = '';
+            if (isset($_FILES['cover_pic']) && $_FILES['cover_pic']['error'] == 0) {
+                $cover_pic_path = $this->upload_image($_FILES['cover_pic'], 'cover');
+            }
+
+            // Prepare user data
+            $hashed_password = password_hash($password, PASSWORD_BCRYPT);
+            $user_id = generate_user_id(strtoupper(substr($role, 0, 3)));
+            
+            $user_data = [
+                'user_id' => $user_id,
+                'role' => $role,
+                'full_name' => $full_name,
+                'email' => $email,
+                'password' => $hashed_password,
+                'contact_num' => $contact_num,
+                'address' => $address,
+                'program' => $program,
+                'profile_pic' => $profile_pic_path,
+                'cover_pic' => $cover_pic_path,
+                'status' => 'active',
+                'last_login' => null
+            ];
+
+            // Add role-specific fields
+            if ($role === 'student') {
+                if (empty($student_num) || empty($qr_code)) {
+                    $this->output
+                        ->set_status_header(400)
+                        ->set_content_type('application/json')
+                        ->set_output(json_encode(['status' => false, 'message' => 'Student number and qr_code are required for student accounts.']));
+                    return;
+                }
+                $user_data['student_num'] = $student_num;
+                $user_data['qr_code'] = $qr_code;
+                
+                // Add section_id only if provided
+                if (!empty($section_id)) {
+                    $user_data['section_id'] = $section_id;
+                }
+            }
+
+            // Debug final data
+            log_message('debug', '=== FINAL USER DATA ===');
+            log_message('debug', print_r($user_data, true));
+            log_message('debug', '=====================');
+
+            // Insert user into database
+            if ($this->User_model->insert($user_data)) {
+                $this->output
+                    ->set_status_header(201)
+                    ->set_content_type('application/json')
+                    ->set_output(json_encode([
+                        'status' => true,
+                        'message' => ucfirst($role) . ' registered successfully!',
+                        'data' => [
+                            'user_id' => $user_id,
+                            'role' => $role,
+                            'full_name' => $full_name,
+                            'email' => $email,
+                            'profile_pic' => $profile_pic_path,
+                            'cover_pic' => $cover_pic_path
+                        ]
+                    ]));
+            } else {
+                $this->output
+                    ->set_status_header(500)
+                    ->set_content_type('application/json')
+                    ->set_output(json_encode(['status' => false, 'message' => ucfirst($role) . ' registration failed!']));
+            }
+
+        } catch (Exception $e) {
+            log_message('error', 'Registration error: ' . $e->getMessage());
+            $this->output
+                ->set_status_header(500)
+                ->set_content_type('application/json')
+                ->set_output(json_encode(['status' => false, 'message' => 'Registration failed: ' . $e->getMessage()]));
+        }
+    }
+
+    private function upload_image($file, $type) {
+        $upload_path = FCPATH . 'uploads/' . $type . '/';
+        
+        // Create directory if it doesn't exist
+        if (!is_dir($upload_path)) {
+            mkdir($upload_path, 0755, true);
+        }
+
+        // Generate unique filename
+        $file_extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $filename = $type . '_' . uniqid() . '.' . $file_extension;
+        $full_path = $upload_path . $filename;
+
+        // Validate file type
+        $allowed_types = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        if (!in_array(strtolower($file_extension), $allowed_types)) {
+            throw new Exception('Invalid file type. Only JPG, PNG, GIF, and WebP are allowed.');
+        }
+
+        // Validate file size (5MB max)
+        if ($file['size'] > 5 * 1024 * 1024) {
+            throw new Exception('File size too large. Maximum 5MB allowed.');
+        }
+
+        // Move uploaded file
+        if (move_uploaded_file($file['tmp_name'], $full_path)) {
+            return 'uploads/' . $type . '/' . $filename;
+        } else {
+            throw new Exception('Failed to upload file');
+        }
+    }
+
+    private function register_json() {
         $data = json_decode(file_get_contents('php://input'));
 
         if (json_last_error() !== JSON_ERROR_NONE) {
@@ -120,6 +287,14 @@ class Auth extends BaseController {
         }
 
         log_message('debug', 'Incoming register data: ' . json_encode($data));
+        
+        // Debug: Log profile and cover pic data
+        if (isset($data->profile_pic)) {
+            log_message('debug', 'Profile pic received: ' . $data->profile_pic);
+        }
+        if (isset($data->cover_pic)) {
+            log_message('debug', 'Cover pic received: ' . $data->cover_pic);
+        }
 
         $role = isset($data->role) ? strtolower($data->role) : null;
         $full_name = isset($data->full_name) ? $data->full_name : null;
@@ -183,7 +358,9 @@ class Auth extends BaseController {
             'address' => $address,
             'program' => $program,
             'status' => 'active',
-            'last_login' => null
+            'last_login' => null,
+            'profile_pic' => isset($data->profile_pic) ? $data->profile_pic : null,
+            'cover_pic' => isset($data->cover_pic) ? $data->cover_pic : null
         ];
 
         // Student-specific fields
@@ -204,6 +381,9 @@ class Auth extends BaseController {
             }
         }
 
+        // Debug: Log the final data being inserted
+        log_message('debug', 'Data to insert: ' . json_encode($dataToInsert));
+        
         if ($this->User_model->insert($dataToInsert)) {
             $this->output
                 ->set_status_header(201)
@@ -328,6 +508,8 @@ class Auth extends BaseController {
         if (isset($data->program)) $update_data['program'] = $data->program;
         if (isset($data->contact_num)) $update_data['contact_num'] = $data->contact_num;
         if (isset($data->address)) $update_data['address'] = $data->address;
+        if (isset($data->profile_pic)) $update_data['profile_pic'] = $data->profile_pic;
+        if (isset($data->cover_pic)) $update_data['cover_pic'] = $data->cover_pic;
         
         // Status field with validation
         if (isset($data->status)) {

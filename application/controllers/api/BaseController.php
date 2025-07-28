@@ -4,24 +4,53 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 class BaseController extends CI_Controller {
     public function __construct() {
         parent::__construct();
-        // Set CORS headers for all API responses
-        header('Access-Control-Allow-Origin: *');
-        header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS, PATCH');
-        header('Access-Control-Allow-Headers: Content-Type, Content-Length, Accept-Encoding, Authorization, X-Requested-With, X-API-Key, Cache-Control, Pragma, Origin, Accept');
-        header('Access-Control-Allow-Credentials: true');
-        header('Content-Type: application/json');
-        // Handle preflight OPTIONS request
+        
+        // Handle CORS preflight requests immediately
         if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-            http_response_code(200);
+            $this->handle_cors_preflight();
             exit();
         }
+        
+        // Set CORS headers for all API responses
+        $this->set_cors_headers();
     }
+    
+    private function handle_cors_preflight() {
+        // Set CORS headers for preflight request
+        $this->set_cors_headers();
+        
+        // Set additional headers for preflight
+        header('Access-Control-Max-Age: 86400'); // 24 hours cache
+        
+        // Return 200 OK for preflight
+        http_response_code(200);
+        exit();
+    }
+    
+    private function set_cors_headers() {
+        // Allow all origins (you can restrict this to specific domains in production)
+        header('Access-Control-Allow-Origin: *');
+        
+        // Allow specific methods
+        header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS, PATCH');
+        
+        // Allow specific headers
+        header('Access-Control-Allow-Headers: Content-Type, Content-Length, Accept-Encoding, Authorization, X-Requested-With, X-API-Key, Cache-Control, Pragma, Origin, Accept');
+        
+        // Allow credentials (cookies, authorization headers, etc.)
+        header('Access-Control-Allow-Credentials: true');
+        
+        // Set content type for JSON responses
+        header('Content-Type: application/json; charset=utf-8');
+    }
+
     protected function send_response($data, $status_code = 200) {
         $this->output
             ->set_status_header($status_code)
             ->set_content_type('application/json')
             ->set_output(json_encode($data));
     }
+    
     protected function send_success($data = null, $message = 'Success', $status_code = 200) {
         $response = [
             'status' => true,
@@ -32,6 +61,7 @@ class BaseController extends CI_Controller {
         }
         $this->send_response($response, $status_code);
     }
+    
     protected function send_error($message = 'Error', $status_code = 400, $data = null) {
         $response = [
             'status' => false,
@@ -42,6 +72,7 @@ class BaseController extends CI_Controller {
         }
         $this->send_response($response, $status_code);
     }
+    
     protected function get_json_input() {
         $input = file_get_contents('php://input');
         $data = json_decode($input);
@@ -51,6 +82,7 @@ class BaseController extends CI_Controller {
         }
         return $data;
     }
+    
     protected function validate_required_fields($data, $required_fields) {
         $missing_fields = [];
         foreach ($required_fields as $field) {

@@ -51,7 +51,7 @@ class Section_model extends CI_Model {
     }
 
     public function get_by_id($section_id) {
-        return $this->db->select('sections.*, users.full_name as adviser_name')
+        return $this->db->select('sections.*, users.full_name as adviser_name, users.email as adviser_email')
             ->from('sections')
             ->join('users', 'sections.adviser_id = users.user_id', 'left')
             ->where('sections.section_id', $section_id)
@@ -233,5 +233,15 @@ class Section_model extends CI_Model {
             ->order_by('sections.year_level', 'ASC')
             ->order_by('sections.section_name', 'ASC')
             ->get()->result_array();
+    }
+
+    // Get adviser (teacher) for a section from the classes table
+    public function get_section_adviser_from_classes($section_id) {
+        $this->db->select('users.user_id, users.full_name as adviser_name, users.email as adviser_email')
+            ->from('classes')
+            ->join('users', 'classes.teacher_id = users.user_id', 'left')
+            ->where('classes.section_id', $section_id)
+            ->limit(1);
+        return $this->db->get()->row_array();
     }
 }
