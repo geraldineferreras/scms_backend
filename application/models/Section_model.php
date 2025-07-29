@@ -1,7 +1,8 @@
 <?php
 class Section_model extends CI_Model {
     public function get_all() {
-        return $this->db->select('sections.*, users.full_name as adviser_name')
+        return $this->db->select('sections.*, users.full_name as adviser_name, 
+                                 (SELECT COUNT(*) FROM users WHERE users.section_id = sections.section_id AND users.role = "student") as enrolled_count')
             ->from('sections')
             ->join('users', 'sections.adviser_id = users.user_id', 'left')
             ->order_by('sections.academic_year', 'DESC')
@@ -224,7 +225,8 @@ class Section_model extends CI_Model {
 
     // Get all sections for a specific program
     public function get_by_program($program) {
-        return $this->db->select('sections.*, users.full_name as adviser_name')
+        return $this->db->select('sections.*, users.full_name as adviser_name, 
+                                 (SELECT COUNT(*) FROM users WHERE users.section_id = sections.section_id AND users.role = "student") as enrolled_count')
             ->from('sections')
             ->join('users', 'sections.adviser_id = users.user_id', 'left')
             ->where('sections.program', $program)
@@ -233,6 +235,46 @@ class Section_model extends CI_Model {
             ->order_by('sections.year_level', 'ASC')
             ->order_by('sections.section_name', 'ASC')
             ->get()->result_array();
+    }
+
+    // Get sections grouped by program and year level
+    public function get_by_program_grouped_by_year($program) {
+        $sections = $this->get_by_program($program);
+        $grouped = [];
+        
+        foreach ($sections as $section) {
+            $year_level = $section['year_level'];
+            if (!isset($grouped[$year_level])) {
+                $grouped[$year_level] = [];
+            }
+            $grouped[$year_level][] = $section;
+        }
+        
+        // Sort by year level (1st, 2nd, 3rd, 4th)
+        ksort($grouped);
+        
+        return $grouped;
+    }
+
+    // Get sections by program and specific year level
+    public function get_by_program_and_year_level($program, $year_level = null) {
+        $this->db->select('sections.*, users.full_name as adviser_name, 
+                          (SELECT COUNT(*) FROM users WHERE users.section_id = sections.section_id AND users.role = "student") as enrolled_count')
+            ->from('sections')
+            ->join('users', 'sections.adviser_id = users.user_id', 'left')
+            ->where('sections.program', $program);
+        
+        if ($year_level && $year_level !== 'all') {
+            // Handle different possible formats
+            $year_level_clean = trim($year_level);
+            $this->db->where('sections.year_level', $year_level_clean);
+        }
+        
+        $this->db->order_by('sections.academic_year', 'DESC')
+            ->order_by('sections.semester', 'ASC')
+            ->order_by('sections.section_name', 'ASC');
+        
+        return $this->db->get()->result_array();
     }
 
     // Get adviser (teacher) for a section from the classes table

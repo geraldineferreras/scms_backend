@@ -9,10 +9,7 @@ class AdminController extends BaseController {
         $this->load->model(['Section_model', 'User_model']);
         $this->load->helper(['response', 'auth']);
         $this->load->library('Token_lib');
-        header("Access-Control-Allow-Origin: *");
-        header("Access-Control-Allow-Methods: GET, OPTIONS, POST, PUT, DELETE");
-        header("Access-Control-Allow-Headers: Content-Type, Content-Length, Accept-Encoding, Authorization");
-        header('Content-Type: application/json');
+        // CORS headers are already handled by BaseController
     }
 
     // List all sections
@@ -401,6 +398,97 @@ class AdminController extends BaseController {
         }
         $sections = $this->Section_model->get_by_program($program);
         return json_response(true, 'Sections for program retrieved successfully', $sections);
+    }
+
+    // Get sections grouped by year level for a specific program
+    public function sections_by_program_year_get($program = null) {
+        $user_data = require_admin($this);
+        if (!$user_data) return;
+        
+        // Allow program from URL or query string
+        if (!$program) {
+            $program = $this->input->get('program');
+        }
+        if (!$program) {
+            return json_response(false, 'Program is required', null, 400);
+        }
+        
+        $program = urldecode($program);
+        
+        // Map shortcuts to full program names
+        $shortcut_map = [
+            'BSIT' => 'Bachelor of Science in Information Technology',
+            'BSIS' => 'Bachelor of Science in Information Systems',
+            'BSCS' => 'Bachelor of Science in Computer Science',
+            'ACT'  => 'Associate in Computer Technology',
+        ];
+        
+        if (isset($shortcut_map[$program])) {
+            $program = $shortcut_map[$program];
+        }
+        
+        $grouped_sections = $this->Section_model->get_by_program_grouped_by_year($program);
+        
+        // Format response with program info
+        $response = [
+            'program' => $program,
+            'program_short' => array_search($program, $shortcut_map) ?: $program,
+            'year_levels' => $grouped_sections,
+            'total_year_levels' => count($grouped_sections),
+            'total_sections' => array_sum(array_map('count', $grouped_sections))
+        ];
+        
+        return json_response(true, 'Sections grouped by year level retrieved successfully', $response);
+    }
+
+    // Get sections by program and specific year level
+    public function sections_by_program_year_specific_get() {
+        $user_data = require_admin($this);
+        if (!$user_data) return;
+        
+        // Get parameters from query string
+        $program = $this->input->get('program');
+        $year_level = $this->input->get('year_level');
+        
+        if (!$program) {
+            return json_response(false, 'Program is required', null, 400);
+        }
+        
+        $program = urldecode($program);
+        $year_level = $year_level ? urldecode($year_level) : null;
+        
+        // Map shortcuts to full program names
+        $shortcut_map = [
+            'BSIT' => 'Bachelor of Science in Information Technology',
+            'BSIS' => 'Bachelor of Science in Information Systems',
+            'BSCS' => 'Bachelor of Science in Computer Science',
+            'ACT'  => 'Associate in Computer Technology',
+        ];
+        
+        if (isset($shortcut_map[$program])) {
+            $program = $shortcut_map[$program];
+        }
+        
+        $sections = $this->Section_model->get_by_program_and_year_level($program, $year_level);
+        
+        // Format response
+        $response = [
+            'program' => $program,
+            'program_short' => array_search($program, $shortcut_map) ?: $program,
+            'year_level' => $year_level ?: 'all',
+            'sections' => $sections,
+            'total_sections' => count($sections)
+        ];
+        
+        $message = "Sections for $program";
+        if ($year_level && $year_level !== 'all') {
+            $message .= " $year_level year";
+        } else {
+            $message .= " all years";
+        }
+        $message .= " retrieved successfully";
+        
+        return json_response(true, $message, $response);
     }
 
     // --- Classes (Subject Offerings) Management ---

@@ -28,20 +28,47 @@ class BaseController extends CI_Controller {
     }
     
     private function set_cors_headers() {
-        // Allow all origins (you can restrict this to specific domains in production)
-        header('Access-Control-Allow-Origin: *');
+        // Get the origin from the request
+        $origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
+        
+        // Allow specific origins (add your frontend URLs here)
+        $allowed_origins = [
+            'http://localhost:3000',
+            'http://localhost:3001',
+            'http://localhost:8080',
+            'http://localhost:5173',
+            'http://127.0.0.1:3000',
+            'http://127.0.0.1:3001',
+            'http://127.0.0.1:8080',
+            'http://127.0.0.1:5173',
+            'http://localhost',
+            'http://127.0.0.1'
+        ];
+        
+        // Check if origin is allowed or use wildcard for development
+        if (in_array($origin, $allowed_origins)) {
+            header('Access-Control-Allow-Origin: ' . $origin);
+        } else {
+            // For development, allow all origins
+            header('Access-Control-Allow-Origin: *');
+        }
         
         // Allow specific methods
         header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS, PATCH');
         
-        // Allow specific headers
-        header('Access-Control-Allow-Headers: Content-Type, Content-Length, Accept-Encoding, Authorization, X-Requested-With, X-API-Key, Cache-Control, Pragma, Origin, Accept');
+        // Allow specific headers - comprehensive list for axios compatibility
+        header('Access-Control-Allow-Headers: Content-Type, Content-Length, Accept-Encoding, Authorization, X-Requested-With, X-API-Key, Cache-Control, Pragma, Origin, Accept, X-CSRF-TOKEN, X-XSRF-TOKEN, X-HTTP-Method-Override');
         
         // Allow credentials (cookies, authorization headers, etc.)
         header('Access-Control-Allow-Credentials: true');
         
         // Set content type for JSON responses
         header('Content-Type: application/json; charset=utf-8');
+        
+        // Additional headers for better axios compatibility
+        header('X-Content-Type-Options: nosniff');
+        header('X-Frame-Options: DENY');
+        header('X-XSS-Protection: 1; mode=block');
     }
 
     protected function send_response($data, $status_code = 200) {

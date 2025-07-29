@@ -130,6 +130,13 @@ $route['api/admin/sections_by_program/(:any)']['get'] = 'api/AdminController/sec
 // For query string (optional, but recommended for clarity)
 $route['api/admin/sections_by_program']['get'] = 'api/AdminController/sections_by_program_get';
 
+// New route for sections grouped by year level for a program
+$route['api/admin/sections_by_program_year/(:any)']['get'] = 'api/AdminController/sections_by_program_year_get/$1';
+$route['api/admin/sections_by_program_year']['get'] = 'api/AdminController/sections_by_program_year_get';
+
+// New route for sections by program and specific year level
+$route['api/admin/sections_by_program_year_specific']['get'] = 'api/AdminController/sections_by_program_year_specific_get';
+
 // Admin Classes (Subject Offerings) Management
 $route['api/admin/classes']['get'] = 'api/AdminController/classes_get';
 $route['api/admin/classes']['post'] = 'api/AdminController/classes_post';

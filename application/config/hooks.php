@@ -11,3 +11,11 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 |	https://codeigniter.com/userguide3/general/hooks.html
 |
 */
+
+// CORS Hook - Handle CORS headers for all API requests
+$hook['pre_system'] = array(
+    'class'    => 'CORS_hook',
+    'function' => 'handle_cors',
+    'filename' => 'CORS_hook.php',
+    'filepath' => 'hooks'
+);
