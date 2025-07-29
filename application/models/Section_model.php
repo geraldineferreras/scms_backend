@@ -1,7 +1,7 @@
 <?php
 class Section_model extends CI_Model {
     public function get_all() {
-        return $this->db->select('sections.*, users.full_name as adviser_name, 
+        return $this->db->select('sections.*, users.full_name as adviser_name, users.email as adviser_email, users.profile_pic as adviser_profile_pic,
                                  (SELECT COUNT(*) FROM users WHERE users.section_id = sections.section_id AND users.role = "student") as enrolled_count')
             ->from('sections')
             ->join('users', 'sections.adviser_id = users.user_id', 'left')
@@ -13,7 +13,7 @@ class Section_model extends CI_Model {
     }
 
     public function get_by_year_level($year_level = null) {
-        $this->db->select('sections.*, users.full_name as adviser_name')
+        $this->db->select('sections.*, users.full_name as adviser_name, users.email as adviser_email, users.profile_pic as adviser_profile_pic')
             ->from('sections')
             ->join('users', 'sections.adviser_id = users.user_id', 'left');
         
@@ -31,7 +31,7 @@ class Section_model extends CI_Model {
     }
 
     public function get_by_semester_and_year($semester = null, $academic_year = null) {
-        $this->db->select('sections.*, users.full_name as adviser_name')
+        $this->db->select('sections.*, users.full_name as adviser_name, users.email as adviser_email, users.profile_pic as adviser_profile_pic')
             ->from('sections')
             ->join('users', 'sections.adviser_id = users.user_id', 'left');
         
@@ -52,7 +52,7 @@ class Section_model extends CI_Model {
     }
 
     public function get_by_id($section_id) {
-        return $this->db->select('sections.*, users.full_name as adviser_name, users.email as adviser_email')
+        return $this->db->select('sections.*, users.full_name as adviser_name, users.email as adviser_email, users.profile_pic as adviser_profile_pic')
             ->from('sections')
             ->join('users', 'sections.adviser_id = users.user_id', 'left')
             ->where('sections.section_id', $section_id)
@@ -225,7 +225,7 @@ class Section_model extends CI_Model {
 
     // Get all sections for a specific program
     public function get_by_program($program) {
-        return $this->db->select('sections.*, users.full_name as adviser_name, 
+        return $this->db->select('sections.*, users.full_name as adviser_name, users.email as adviser_email, users.profile_pic as adviser_profile_pic,
                                  (SELECT COUNT(*) FROM users WHERE users.section_id = sections.section_id AND users.role = "student") as enrolled_count')
             ->from('sections')
             ->join('users', 'sections.adviser_id = users.user_id', 'left')
@@ -258,7 +258,7 @@ class Section_model extends CI_Model {
 
     // Get sections by program and specific year level
     public function get_by_program_and_year_level($program, $year_level = null) {
-        $this->db->select('sections.*, users.full_name as adviser_name, 
+        $this->db->select('sections.*, users.full_name as adviser_name, users.email as adviser_email, users.profile_pic as adviser_profile_pic,
                           (SELECT COUNT(*) FROM users WHERE users.section_id = sections.section_id AND users.role = "student") as enrolled_count')
             ->from('sections')
             ->join('users', 'sections.adviser_id = users.user_id', 'left')

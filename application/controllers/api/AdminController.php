@@ -17,7 +17,37 @@ class AdminController extends BaseController {
         $user_data = require_admin($this);
         if (!$user_data) return;
         $sections = $this->Section_model->get_all();
-        return json_response(true, 'Sections retrieved successfully', $sections);
+        
+        // Format sections for frontend
+        $formatted_sections = array_map(function($section) {
+            return [
+                'id' => $section['section_id'],
+                'name' => $section['section_name'],
+                'section_name' => $section['section_name'],
+                'program' => $section['program'],
+                'course' => $section['program'],
+                'year_level' => $section['year_level'],
+                'year' => $section['year_level'],
+                'adviser_id' => $section['adviser_id'],
+                'semester' => $section['semester'],
+                'academic_year' => $section['academic_year'],
+                'enrolled_count' => (int)$section['enrolled_count'],
+                'student_count' => (int)$section['enrolled_count'],
+                'enrolled' => (int)$section['enrolled_count'],
+                'adviserDetails' => [
+                    'name' => $section['adviser_name'] ?: 'No Adviser',
+                    'email' => $section['adviser_email'] ?: 'No Email',
+                    'profile_picture' => $section['adviser_profile_pic'] ?: null
+                ],
+                'adviser_details' => [
+                    'name' => $section['adviser_name'] ?: 'No Adviser',
+                    'email' => $section['adviser_email'] ?: 'No Email',
+                    'profile_picture' => $section['adviser_profile_pic'] ?: null
+                ]
+            ];
+        }, $sections);
+        
+        return json_response(true, 'Sections retrieved successfully', $formatted_sections);
     }
 
     // Get a specific section
@@ -397,7 +427,37 @@ class AdminController extends BaseController {
             $program = $shortcut_map[$program];
         }
         $sections = $this->Section_model->get_by_program($program);
-        return json_response(true, 'Sections for program retrieved successfully', $sections);
+        
+        // Format sections for frontend
+        $formatted_sections = array_map(function($section) {
+            return [
+                'id' => $section['section_id'],
+                'name' => $section['section_name'],
+                'section_name' => $section['section_name'],
+                'program' => $section['program'],
+                'course' => $section['program'],
+                'year_level' => $section['year_level'],
+                'year' => $section['year_level'],
+                'adviser_id' => $section['adviser_id'],
+                'semester' => $section['semester'],
+                'academic_year' => $section['academic_year'],
+                'enrolled_count' => (int)$section['enrolled_count'],
+                'student_count' => (int)$section['enrolled_count'],
+                'enrolled' => (int)$section['enrolled_count'],
+                'adviserDetails' => [
+                    'name' => $section['adviser_name'] ?: 'No Adviser',
+                    'email' => $section['adviser_email'] ?: 'No Email',
+                    'profile_picture' => $section['adviser_profile_pic'] ?: null
+                ],
+                'adviser_details' => [
+                    'name' => $section['adviser_name'] ?: 'No Adviser',
+                    'email' => $section['adviser_email'] ?: 'No Email',
+                    'profile_picture' => $section['adviser_profile_pic'] ?: null
+                ]
+            ];
+        }, $sections);
+        
+        return json_response(true, 'Sections for program retrieved successfully', $formatted_sections);
     }
 
     // Get sections grouped by year level for a specific program
@@ -471,13 +531,42 @@ class AdminController extends BaseController {
         
         $sections = $this->Section_model->get_by_program_and_year_level($program, $year_level);
         
+        // Format sections for frontend
+        $formatted_sections = array_map(function($section) {
+            return [
+                'id' => $section['section_id'],
+                'name' => $section['section_name'],
+                'section_name' => $section['section_name'],
+                'program' => $section['program'],
+                'course' => $section['program'],
+                'year_level' => $section['year_level'],
+                'year' => $section['year_level'],
+                'adviser_id' => $section['adviser_id'],
+                'semester' => $section['semester'],
+                'academic_year' => $section['academic_year'],
+                'enrolled_count' => (int)$section['enrolled_count'],
+                'student_count' => (int)$section['enrolled_count'],
+                'enrolled' => (int)$section['enrolled_count'],
+                'adviserDetails' => [
+                    'name' => $section['adviser_name'] ?: 'No Adviser',
+                    'email' => $section['adviser_email'] ?: 'No Email',
+                    'profile_picture' => $section['adviser_profile_pic'] ?: null
+                ],
+                'adviser_details' => [
+                    'name' => $section['adviser_name'] ?: 'No Adviser',
+                    'email' => $section['adviser_email'] ?: 'No Email',
+                    'profile_picture' => $section['adviser_profile_pic'] ?: null
+                ]
+            ];
+        }, $sections);
+        
         // Format response
         $response = [
             'program' => $program,
             'program_short' => array_search($program, $shortcut_map) ?: $program,
             'year_level' => $year_level ?: 'all',
-            'sections' => $sections,
-            'total_sections' => count($sections)
+            'sections' => $formatted_sections,
+            'total_sections' => count($formatted_sections)
         ];
         
         $message = "Sections for $program";
