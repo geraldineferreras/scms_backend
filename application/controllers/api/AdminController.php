@@ -160,7 +160,51 @@ class AdminController extends BaseController {
         
         $success = $this->Section_model->update($section_id, $update_data);
         if ($success) {
-            return json_response(true, 'Section updated successfully');
+            // Handle student assignments if provided
+            $assigned_students = [];
+            $removed_students = [];
+            
+            if (isset($data->student_ids) && is_array($data->student_ids)) {
+                // Filter out empty student IDs (just like in create method)
+                $valid_student_ids = array_filter($data->student_ids, function($id) {
+                    return !empty($id);
+                });
+                
+                if (!empty($valid_student_ids)) {
+                    // Get current students in the section
+                    $current_students = $this->Section_model->get_students($section_id);
+                    $current_student_ids = array_column($current_students, 'user_id');
+                    
+                    // Students to add (in new list but not in current)
+                    $students_to_add = array_diff($valid_student_ids, $current_student_ids);
+                    if (!empty($students_to_add)) {
+                        $assigned_students = $this->Section_model->assign_students_to_section($section_id, array_values($students_to_add));
+                    }
+                    
+                    // Students to remove (in current list but not in new)
+                    $students_to_remove = array_diff($current_student_ids, $valid_student_ids);
+                    if (!empty($students_to_remove)) {
+                        $removed_students = $this->Section_model->remove_students_from_section($section_id, array_values($students_to_remove));
+                    }
+                } else {
+                    // If student_ids is provided but empty, remove all students from section
+                    $current_students = $this->Section_model->get_students($section_id);
+                    if (!empty($current_students)) {
+                        $current_student_ids = array_column($current_students, 'user_id');
+                        $removed_students = $this->Section_model->remove_students_from_section($section_id, $current_student_ids);
+                    }
+                }
+            }
+            
+            $response_data = [
+                'section_id' => $section_id,
+                'assigned_students_count' => count($assigned_students),
+                'assigned_students' => $assigned_students,
+                'removed_students_count' => count($removed_students),
+                'removed_students' => $removed_students
+            ];
+            
+            return json_response(true, 'Section updated successfully', $response_data);
         } else {
             return json_response(false, 'Failed to update section', null, 500);
         }

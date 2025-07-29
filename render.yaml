@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: scms-backend
+    env: php
+    buildCommand: composer install
+    startCommand: php -S 0.0.0.0:$PORT -t .
+    envVars:
+      - key: DB_HOST
+        value: your-database-host
+      - key: DB_USERNAME
+        value: your-database-username
+      - key: DB_PASSWORD
+        value: your-database-password
+      - key: DB_NAME
+        value: your-database-name
