@@ -66,15 +66,19 @@ $route['api/users']['get'] = 'api/auth/get_users';
 $route['api/users']['options'] = 'api/auth/options';
 $route['api/user']['get'] = 'api/auth/get_user';
 $route['api/user']['put'] = 'api/auth/update_user';
+$route['api/user']['post'] = 'api/auth/update_user';
 $route['api/user']['delete'] = 'api/auth/delete_user';
 $route['api/user']['options'] = 'api/auth/options';
 
 // Specific Update Routes
 $route['api/admin/update']['put'] = 'api/auth/update_user';
+$route['api/admin/update']['post'] = 'api/auth/update_user';
 $route['api/admin/update']['options'] = 'api/auth/options';
 $route['api/teacher/update']['put'] = 'api/auth/update_user';
+$route['api/teacher/update']['post'] = 'api/auth/update_user';
 $route['api/teacher/update']['options'] = 'api/auth/options';
 $route['api/student/update']['put'] = 'api/auth/update_user';
+$route['api/student/update']['post'] = 'api/auth/update_user';
 $route['api/student/update']['options'] = 'api/auth/options';
 
 // Specific Delete Routes

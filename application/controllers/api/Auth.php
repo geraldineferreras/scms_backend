@@ -479,6 +479,129 @@ class Auth extends BaseController {
             return; // Error response already sent
         }
         
+        // Check if this is a multipart form request (for file uploads)
+        if ($this->input->method() === 'post' && !empty($_FILES)) {
+            $this->update_user_with_images();
+            return;
+        }
+        
+        // Handle JSON request
+        $this->update_user_json();
+    }
+    
+    private function update_user_with_images() {
+        try {
+            // Get form data
+            $role = $this->input->post('role');
+            $user_id = $this->input->post('user_id');
+            
+            if (empty($role) || empty($user_id)) {
+                $this->output
+                    ->set_status_header(400)
+                    ->set_content_type('application/json')
+                    ->set_output(json_encode(['status' => false, 'message' => 'Role and user_id are required']));
+                return;
+            }
+            
+            // Check if user exists
+            $user = $this->User_model->get_by_id($user_id);
+            if (!$user || $user['role'] !== $role) {
+                $this->output
+                    ->set_status_header(404)
+                    ->set_content_type('application/json')
+                    ->set_output(json_encode(['status' => false, 'message' => 'User not found']));
+                return;
+            }
+            
+            $update_data = [];
+            
+            // Handle profile image upload
+            if (isset($_FILES['profile_pic']) && $_FILES['profile_pic']['error'] == 0) {
+                try {
+                    $profile_pic_path = $this->upload_image($_FILES['profile_pic'], 'profile');
+                    $update_data['profile_pic'] = $profile_pic_path;
+                } catch (Exception $e) {
+                    $this->output
+                        ->set_status_header(400)
+                        ->set_content_type('application/json')
+                        ->set_output(json_encode(['status' => false, 'message' => 'Profile image upload failed: ' . $e->getMessage()]));
+                    return;
+                }
+            }
+            
+            // Handle cover image upload
+            if (isset($_FILES['cover_pic']) && $_FILES['cover_pic']['error'] == 0) {
+                try {
+                    $cover_pic_path = $this->upload_image($_FILES['cover_pic'], 'cover');
+                    $update_data['cover_pic'] = $cover_pic_path;
+                } catch (Exception $e) {
+                    $this->output
+                        ->set_status_header(400)
+                        ->set_content_type('application/json')
+                        ->set_output(json_encode(['status' => false, 'message' => 'Cover image upload failed: ' . $e->getMessage()]));
+                    return;
+                }
+            }
+            
+            // Handle other form fields
+            if ($this->input->post('full_name')) $update_data['full_name'] = $this->input->post('full_name');
+            if ($this->input->post('email')) $update_data['email'] = $this->input->post('email');
+            if ($this->input->post('password')) $update_data['password'] = password_hash($this->input->post('password'), PASSWORD_BCRYPT);
+            if ($this->input->post('program')) $update_data['program'] = $this->input->post('program');
+            if ($this->input->post('contact_num')) $update_data['contact_num'] = $this->input->post('contact_num');
+            if ($this->input->post('address')) $update_data['address'] = $this->input->post('address');
+            
+            // Status field with validation
+            if ($this->input->post('status')) {
+                $new_status = strtolower($this->input->post('status'));
+                if ($new_status !== 'active' && $new_status !== 'inactive') {
+                    $this->output
+                        ->set_status_header(400)
+                        ->set_content_type('application/json')
+                        ->set_output(json_encode(['status' => false, 'message' => 'Status must be either "active" or "inactive"']));
+                    return;
+                }
+                $update_data['status'] = $new_status;
+            }
+            
+            // Student-specific fields
+            if ($role === 'student') {
+                if ($this->input->post('student_num')) $update_data['student_num'] = $this->input->post('student_num');
+                if ($this->input->post('section_id')) $update_data['section_id'] = $this->input->post('section_id');
+                if ($this->input->post('qr_code')) $update_data['qr_code'] = $this->input->post('qr_code');
+            }
+            
+            if (empty($update_data)) {
+                $this->output
+                    ->set_status_header(400)
+                    ->set_content_type('application/json')
+                    ->set_output(json_encode(['status' => false, 'message' => 'No data provided for update']));
+                return;
+            }
+            
+            $success = $this->User_model->update($user_id, $update_data);
+            if ($success) {
+                $this->output
+                    ->set_status_header(200)
+                    ->set_content_type('application/json')
+                    ->set_output(json_encode(['status' => true, 'message' => 'User updated successfully']));
+            } else {
+                $this->output
+                    ->set_status_header(500)
+                    ->set_content_type('application/json')
+                    ->set_output(json_encode(['status' => false, 'message' => 'Failed to update user']));
+            }
+            
+        } catch (Exception $e) {
+            log_message('error', 'Update user error: ' . $e->getMessage());
+            $this->output
+                ->set_status_header(500)
+                ->set_content_type('application/json')
+                ->set_output(json_encode(['status' => false, 'message' => 'Update failed: ' . $e->getMessage()]));
+        }
+    }
+    
+    private function update_user_json() {
         $data = json_decode(file_get_contents('php://input'));
 
         if (json_last_error() !== JSON_ERROR_NONE) {
